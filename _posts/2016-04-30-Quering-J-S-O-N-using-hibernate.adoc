@@ -1,9 +1,11 @@
-hibernate-native-json
-====================
+Quering JSON using hibernate
+============================
 
 :hp-tags: jpa, hibernate, json
 
-Read/Write an object to JSON / JSON to object into a database table field (declared as a string column).
+I started a new pet project, https://github.com/velo/hibernate-native-json/[hibernate-native-jon]
+
+It allows to read/write, query and generate DDL for JSON.  It can convert an object to JSON / JSON to object into a database table field (declared as a string column).
 This also allow to query json.
 
 Currently supported databases:
