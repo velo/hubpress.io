@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>Quering JSON using hibernate</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="//velo.github.io/themes/Casper/favicon.ico">
+
+    <link rel="stylesheet" type="text/css" href="//velo.github.io/themes/Casper/assets/css/screen.css?v=1.0.0" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+
+    <link rel="canonical" href="https://velo.github.io/2016/04/30/Quering-J-S-O-N-using-hibernate.html" />
+    
+    <meta property="og:site_name" content="Compile time check" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Quering JSON using hibernate" />
+    <meta property="og:description" content="I started a new pet project, hibernate-native-jon It allows to read/write, query and generate DDL for JSON.  It can convert an object to JSON / JSON to object into a database table field (declared as a string column). This also..." />
+    <meta property="og:url" content="https://velo.github.io/2016/04/30/Quering-J-S-O-N-using-hibernate.html" />
+    <meta property="article:published_time" content="2016-04-29T12:00:00.000Z" />
+    <meta property="article:modified_time" content="2016-04-29T23:59:00.544Z" />
+    <meta property="article:tag" content="jpa" />
+    <meta property="article:tag" content="hibernate" />
+    <meta property="article:tag" content="json" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Quering JSON using hibernate" />
+    <meta name="twitter:description" content="I started a new pet project, hibernate-native-jon It allows to read/write, query and generate DDL for JSON.  It can convert an object to JSON / JSON to object into a database table field (declared as a string column). This also..." />
+    <meta name="twitter:url" content="https://velo.github.io/2016/04/30/Quering-J-S-O-N-using-hibernate.html" />
+    
+    <script type="application/ld+json">
+{
+    "@context": "http://schema.org",
+    "@type": "Article",
+    "publisher": "Compile time check",
+    "author": {
+        "@type": "Person",
+        "name": "Marvin Froeder",
+        "image": "https://avatars.githubusercontent.com/u/136590?v=3",
+        "url": "undefined/author/undefined",
+        "sameAs": "http://about.me/velo/"
+    },
+    "headline": "Quering JSON using hibernate",
+    "url": "https://velo.github.io/2016/04/30/Quering-J-S-O-N-using-hibernate.html",
+    "datePublished": "2016-04-29T12:00:00.000Z",
+    "dateModified": "2016-04-29T23:59:00.544Z",
+    "keywords": "jpa,  hibernate,  json",
+    "description": "I started a new pet project, hibernate-native-jon It allows to read/write, query and generate DDL for JSON.  It can convert an object to JSON / JSON to object into a database table field (declared as a string column). This also..."
+}
+    </script>
+
+    <meta name="generator" content="Ghost ?" />
+    <link rel="alternate" type="application/rss+xml" title="Compile time check" href="https://velo.github.io/rss" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/default.min.css">
+</head>
+<body class="post-template tag-jpa tag-hibernate tag-json">
+
+    
+
+
+<header class="main-header post-head no-cover">
+    <nav class="main-nav  clearfix">
+        <a class="back-button icon-arrow-left" href="https://velo.github.io">Home</a>
+        <!-- <a class="subscribe-button icon-feed" href="https://velo.github.io/rss/">Subscribe</a> -->
+    </nav>
+</header>
+
+<main class="content" role="main">
+
+    <article class="post tag-jpa tag-hibernate tag-json">
+
+        <header class="post-header">
+            <h1 class="post-title">Quering JSON using hibernate</h1>
+            <section class="post-meta">
+                <time class="post-date" datetime="2016-04-30">30 April 2016</time>  on <a href="https://velo.github.io/tag/jpa">jpa</a>, <a href="https://velo.github.io/tag/hibernate"> hibernate</a>, <a href="https://velo.github.io/tag/json"> json</a>
+            </section>
+        </header>
+
+        <section class="post-content">
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>I started a new pet project, <a href="https://github.com/velo/hibernate-native-json/">hibernate-native-jon</a></p>
+</div>
+<div class="paragraph">
+<p>It allows to read/write, query and generate DDL for JSON.  It can convert an object to JSON / JSON to object into a database table field (declared as a string column).
+This also allow to query json.</p>
+</div>
+<div class="paragraph">
+<p>Currently supported databases:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>postgresql</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This project provided a hibernate UserType and a dialect with json support.</p>
+</div>
+<div class="paragraph">
+<p>The UserType uses jackson object mappper to do a fast serialize/deserialize of a json string representation.  More information  <a href="http://blog.xebia.com/2009/11/09/understanding-and-writing-hibernate-user-types/">how to implements a user type</a></p>
+</div>
+<div class="paragraph">
+<p>Check the src/test folder to see a full example.</p>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example">Example</h5>
+<div class="paragraph">
+<p>You can serialize either a class or a Map&lt;String, Object&gt; (in any cases a more dynamic field is necessary).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>@Entity
+public class MyClass {
+
+	@Type(type = "com.marvinformatics.hibernate.json.JsonListUserType")
+	@Target(Label.class)
+	private List&lt;Label&gt; labels = new ArrayList&lt;Label&gt;();
+
+	@Type(type = "com.marvinformatics.hibernate.json.JsonUserType")
+	private Map&lt;String, String&gt; extra;
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Keep in mind, for collections @org.hibernate.annotations.Target is mandatory.</p>
+</div>
+<div class="paragraph">
+<p>In order to be able to persist, query and generate DDL for this objects you need to set hibernate dialect to <code>PostgreSQLJsonDialect</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>  &lt;property name="hibernate.dialect"&gt;com.marvinformatics.hibernate.json.PostgreSQLJsonDialect&lt;/property&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now you can persist your object as a json using your hibernate session / jpa repository.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_querying">Querying</h5>
+<div class="paragraph">
+<p><code>json_text</code>: is equivalent to postgres <code>-&gt;&gt;</code> <a href="http://www.postgresql.org/docs/9.5/static/functions-json.html">get JSON object field as text</a></p>
+</div>
+<div class="paragraph">
+<p>This allow a HQL query like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>	select
+		json_text(i.label, 'value')
+	from
+		Item i
+	where
+		json_text(i.label, 'lang') = :lang</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Witch will produce the following SQL:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>    select
+        item0_.label -&gt;&gt; 'value' as col_0_0_
+    from
+        items item0_
+    where
+        item0_.label -&gt;&gt; 'lang'=?</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_ddl_generation">DDL generation</h5>
+<div class="paragraph">
+<p>Considering this class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>@Entity
+@Table(name = "items")
+public class Item {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
+    @Column(name = "name")
+    private String name;
+
+    @Type(type = "com.marvinformatics.hibernate.json.JsonUserType")
+    @Column(name = "label")
+    private Label label;
+
+    @Type(type = "com.marvinformatics.hibernate.json.JsonUserType")
+    private Map&lt;String, String&gt; extra;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This in produce the following DDL:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>    create table items (
+        id int8 not null,
+        extra jsonb,
+        label jsonb,
+        name varchar(255),
+        ORDER_ID int8,
+        primary key (id)
+    )</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>More functions and more databases are comming.  Wanna sppeed up the process? Click <a href="https://github.com/velo/hibernate-native-json/compare">here</a></p>
+</div>
+</div>
+        </section>
+
+        <footer class="post-footer">
+
+
+            <figure class="author-image">
+                <a class="img" href="" style="background-image: url(https://avatars.githubusercontent.com/u/136590?v=3)"><span class="hidden">Marvin Froeder's Picture</span></a>
+            </figure>
+
+            <section class="author">
+                <h4><a href="">Marvin Froeder</a></h4>
+
+                    <p>Read <a href="">more posts</a> by this author.</p>
+                <div class="author-meta">
+                    <span class="author-location icon-location">The coolest little capital in the world - Wellington, NZ</span>
+                    <span class="author-link icon-link"><a href="http://about.me/velo/">http://about.me/velo/</a></span>
+                </div>
+            </section>
+
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="https://twitter.com/share?text=Quering%20JSON%20using%20hibernate&amp;url=https://velo.github.io/2016/04/30/Quering-J-S-O-N-using-hibernate.html"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://velo.github.io/2016/04/30/Quering-J-S-O-N-using-hibernate.html"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=https://velo.github.io/2016/04/30/Quering-J-S-O-N-using-hibernate.html"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+
+    </article>
+
+</main>
+
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="https://velo.github.io">Compile time check</a> &copy; 2016</section>
+        <section class="poweredby">Proudly published with <a href="http://hubpress.io">HubPress</a></section>
+    </footer>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
+      <script type="text/javascript">
+        jQuery( document ).ready(function() {
+          // change date with ago
+          jQuery('ago.ago').each(function(){
+            var element = jQuery(this).parent();
+            element.html( moment(element.text()).fromNow());
+          });
+        });
+
+        hljs.initHighlightingOnLoad();      
+      </script>
+
+    <script type="text/javascript" src="//velo.github.io/themes/Casper/assets/js/jquery.fitvids.js?v=1.0.0"></script>
+    <script type="text/javascript" src="//velo.github.io/themes/Casper/assets/js/index.js?v=1.0.0"></script>
+
+</body>
+</html>
