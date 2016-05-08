@@ -1,0 +1,179 @@
+Query Optimization 101
+======================
+
+:hp-tags: postgresql, performance
+
+On this post, I will show what I usually do to optimize queries.  My database of choice is http://www.postgresql.org/[postgreSQL], but the same principles can be apply to most databases.
+
+
+##### Laying down the terrain
+
+image::http://i.imgur.com/kkizfzd.png[]
+
+Pretty much, I have 3 tables...
+A, B and C (yeah, great naming).
+
+A is the one that contains my most relevant data.
+B is a mandatory join, contains some data we need.
+C is an optinal join, contains some data we need, C also know B and it's mandatory.
+
+##### My original query
+
+```
+     select A.*, B.*, C.*
+     from
+         A A 
+     join B B on A.B_id=B.id 
+     left join C C on A.C_id=C.id 
+     where
+         A.B_id='my_cool_id'
+     order by
+         A.order asc
+```
+
+In simple terms, select all from A, B and C filtered by B_id.
+
+This query was taking 147 ms, returning 8K rows... is not that bad, but, long ago https://github.com/miere[one guy] told me that if a query was taking more then 5 ms, would be nice to revisit it and optimize it.
+
+
+##### Asking postgres where the problem is
+Don't hurt to ask, right?
+Maybe postgres know where the problem lies. Let's use the http://www.postgresql.org/docs/current/static/sql-explain.html[explain] statement to request the execution plan:
+
+```
+Sort  (cost=47685.86..47705.35 rows=7796 width=4480)
+  Sort Key: A.order
+  Sort Method: external sort  Disk: 4568kB
+  ->  Nested Loop Left Join  (cost=0.42..17172.90 rows=7796 width=4480)
+        ->  Nested Loop  (cost=0.14..14475.63 rows=7796 width=3299)
+              ->  Index Scan using B_pkey on B B  (cost=0.14..8.16 rows=1 width=1590)
+                    Index Cond: ((id)::text = 'my_cool_id'::text)
+              ->  Seq Scan on A A  (cost=0.00..14389.51 rows=7796 width=1709)
+                    Filter: ((B_id)::text = 'my_cool_id'::text)
+                    Rows Removed by Filter: 399589
+        ->  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1181)
+              Index Cond: ((A.C_id)::text = (id)::text)
+
+```
+
+Remember when I said C also "know" B?
+That is where I started.  I also included the B filter on all joins.
+```
+     select A.*, B.*, C.*
+     from A A 
+     join B B on A.B_id=B.id and B.id='my_cool_id'
+     left join C C on A.C_id=C.id and C.B_id='my_cool_id'
+     where
+         A.B_id='my_cool_id'
+     order by
+         A.order asc
+```
+
+This simple action reduces the cost of the query a little bit:
+```
+Sort  (cost=45250.00..45269.56 rows=7822 width=4480)
+  Sort Key: A.order
+  Sort Method: external sort  Disk: 4568kB
+  ->  Hash Left Join  (cost=85.19..14637.18 rows=7822 width=4480)
+        Hash Cond: ((A.C_id)::text = (C.id)::text)
+        ->  Nested Loop  (cost=0.14..14522.33 rows=7822 width=3299)
+              ->  Index Scan using B_pkey on B B  (cost=0.14..8.16 rows=1 width=1590)
+                    Index Cond: ((id)::text = 'my_cool_id'::text)
+              ->  Seq Scan on A A  (cost=0.00..14435.95 rows=7822 width=1709)
+                    Filter: ((B_id)::text = 'my_cool_id'::text)
+                    Rows Removed by Filter: 400486
+        ->  Hash  (cost=84.14..84.14 rows=73 width=1181)
+              Buckets: 1024  Batches: 1  Memory Usage: 13kB
+              ->  Seq Scan on C C  (cost=0.00..84.14 rows=73 width=1181)
+                    Filter: ((B_id)::text = 'my_cool_id'::text)
+                    Rows Removed by Filter: 2386
+```
+
+No miracles here.  The query still take 141 ms to go, it's better, but ain't THAT better.
+
+
+##### 1st problem: `Seq Scan`
+In general, `Seq Scan` is a bad thing.  In this case, `Seq Scan` is happening on both FK.
+
+So I will introduce indexes here:
+```
+create index on C(B_id);
+create index on A(B_id);
+```
+
+Resulting in:
+```
+Sort  (cost=40802.22..40821.87 rows=7858 width=4498)
+  Sort Key: A.order
+  Sort Method: external sort  Disk: 4568kB
+  ->  Hash Left Join  (cost=285.02..9885.81 rows=7858 width=4498)
+        Hash Cond: ((A.C_id)::text = (C.id)::text)
+        ->  Nested Loop  (cost=221.47..9792.31 rows=7858 width=3317)
+              ->  Index Scan using B_pkey on B B  (cost=0.14..8.16 rows=1 width=1608)
+                    Index Cond: ((id)::text = 'my_cool_id'::text)
+              ->  Bitmap Heap Scan on A A  (cost=221.32..9705.57 rows=7858 width=1709)
+                    Recheck Cond: ((B_id)::text = 'my_cool_id'::text)
+                    ->  Bitmap Index Scan on A_B_id_idx  (cost=0.00..219.36 rows=7858 width=0)
+                          Index Cond: ((B_id)::text = 'my_cool_id'::text)
+        ->  Hash  (cost=62.63..62.63 rows=74 width=1181)
+              Buckets: 1024  Batches: 1  Memory Usage: 13kB
+              ->  Bitmap Heap Scan on C C  (cost=4.85..62.63 rows=74 width=1181)
+                    Recheck Cond: ((B_id)::text = 'my_cool_id'::text)
+                    ->  Bitmap Index Scan on C_B_id_idx  (cost=0.00..4.84 rows=74 width=0)
+                          Index Cond: ((B_id)::text = 'my_cool_id'::text)
+```
+
+This resulted in a more significant cost reduction and a huge time reduction.  From 147ms to 40ms.
+
+While I was doing this, I realized that A.order + A.B_id needed an unique index.
+So I needed a new index to handle that:
+```
+CREATE UNIQUE INDEX ON A (order, B_id);
+```
+```
+Nested Loop Left Join  (cost=0.85..37646.14 rows=7903 width=4498)
+  ->  Nested Loop  (cost=0.57..34884.21 rows=7903 width=3317)
+        ->  Index Scan using A_order_B_id_idx on A A  (cost=0.42..34777.25 rows=7903 width=1709)
+              Index Cond: ((B_id)::text = 'my_cool_id'::text)
+        ->  Materialize  (cost=0.14..8.17 rows=1 width=1608)
+              ->  Index Scan using B_pkey on B B  (cost=0.14..8.16 rows=1 width=1608)
+                    Index Cond: ((id)::text = 'my_cool_id'::text)
+  ->  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1181)
+        Index Cond: ((A.C_id)::text = (id)::text)
+        Filter: ((B_id)::text = 'my_cool_id'::text)
+```
+The cost when down a little further, but, the time to execute this rised. Went from 40ms to 48ms.
+
+Then it strook me, the index was "out of order".  In general, is a good idea to put the low cardinatily item first and the highest cardinality latter.  So I did it:
+```
+DROP INDEX idx_B_id_order_A;
+CREATE UNIQUE INDEX ON A (B_id, order);
+```
+```
+Nested Loop Left Join  (cost=0.85..25272.46 rows=7650 width=4500)
+  ->  Nested Loop  (cost=0.57..22580.96 rows=7650 width=3319)
+        ->  Index Scan using A_B_id_order_idx on A A  (cost=0.42..22477.17 rows=7650 width=1709)
+              Index Cond: ((B_id)::text = 'my_cool_id'::text)
+        ->  Materialize  (cost=0.14..8.17 rows=1 width=1610)
+              ->  Index Scan using B_pkey on B B  (cost=0.14..8.16 rows=1 width=1610)
+                    Index Cond: ((id)::text = 'my_cool_id'::text)
+  ->  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1181)
+        Index Cond: ((A.C_id)::text = (id)::text)
+        Filter: ((B_id)::text = 'my_cool_id'::text)
+```
+
+The cost did a real drop and so did the time.  Query now runs in 22 ms.
+The cost drop by half and the time 7 times.  Not bad at all!
+
+As a final optimization step, I decided to clusterize the database.
+By clustering I mean http://www.postgresql.org/docs/current/static/sql-cluster.html[this].
+
+Cluster physically reorder a table based on a given index.  It's a one time operation.  So I decided to cluster based on the recent created index. 
+
+```
+CLUSTER A USING idx_B_id_order_A
+```
+
+This plunger time query time to 12 ms =)
+
+I did not beat the 5 ms rule, but 10 times was good enough for now.  Also, this was on my local machine, the server is way better.
