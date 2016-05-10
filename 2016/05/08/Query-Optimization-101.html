@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>Query Optimization 101</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="//velo.github.io/themes/Casper/favicon.ico">
+
+    <link rel="stylesheet" type="text/css" href="//velo.github.io/themes/Casper/assets/css/screen.css?v=1.0.0" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+
+    <link rel="canonical" href="https://velo.github.io/2016/05/08/Query-Optimization-101.html" />
+    
+    <meta property="og:site_name" content="Compile time check" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Query Optimization 101" />
+    <meta property="og:description" content="On this post, I will show what I usually do to optimize queries.  My database of choice is postgreSQL, but the same principles can be apply to most databases. Laying down the terrain Pretty much, I have 3 tables&amp;#8230;..." />
+    <meta property="og:url" content="https://velo.github.io/2016/05/08/Query-Optimization-101.html" />
+    <meta property="article:published_time" content="2016-05-07T12:00:00.000Z" />
+    <meta property="article:modified_time" content="2016-05-10T08:01:06.172Z" />
+    <meta property="article:tag" content="postgresql" />
+    <meta property="article:tag" content="performance" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Query Optimization 101" />
+    <meta name="twitter:description" content="On this post, I will show what I usually do to optimize queries.  My database of choice is postgreSQL, but the same principles can be apply to most databases. Laying down the terrain Pretty much, I have 3 tables&amp;#8230;..." />
+    <meta name="twitter:url" content="https://velo.github.io/2016/05/08/Query-Optimization-101.html" />
+    
+    <script type="application/ld+json">
+{
+    "@context": "http://schema.org",
+    "@type": "Article",
+    "publisher": "Compile time check",
+    "author": {
+        "@type": "Person",
+        "name": "Marvin Froeder",
+        "image": "https://avatars.githubusercontent.com/u/136590?v=3",
+        "url": "undefined/author/undefined",
+        "sameAs": "http://about.me/velo/"
+    },
+    "headline": "Query Optimization 101",
+    "url": "https://velo.github.io/2016/05/08/Query-Optimization-101.html",
+    "datePublished": "2016-05-07T12:00:00.000Z",
+    "dateModified": "2016-05-10T08:01:06.172Z",
+    "keywords": "postgresql,  performance",
+    "description": "On this post, I will show what I usually do to optimize queries.  My database of choice is postgreSQL, but the same principles can be apply to most databases. Laying down the terrain Pretty much, I have 3 tables&amp;#8230;..."
+}
+    </script>
+
+    <meta name="generator" content="Ghost ?" />
+    <link rel="alternate" type="application/rss+xml" title="Compile time check" href="https://velo.github.io/rss" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/default.min.css">
+</head>
+<body class="post-template tag-postgresql tag-performance">
+
+    
+
+
+<header class="main-header post-head no-cover">
+    <nav class="main-nav  clearfix">
+        <a class="back-button icon-arrow-left" href="https://velo.github.io">Home</a>
+        <!-- <a class="subscribe-button icon-feed" href="https://velo.github.io/rss/">Subscribe</a> -->
+    </nav>
+</header>
+
+<main class="content" role="main">
+
+    <article class="post tag-postgresql tag-performance">
+
+        <header class="post-header">
+            <h1 class="post-title">Query Optimization 101</h1>
+            <section class="post-meta">
+                <time class="post-date" datetime="2016-05-08">08 May 2016</time>  on <a href="https://velo.github.io/tag/postgresql">postgresql</a>, <a href="https://velo.github.io/tag/performance"> performance</a>
+            </section>
+        </header>
+
+        <section class="post-content">
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>On this post, I will show what I usually do to optimize queries.  My database of choice is <a href="http://www.postgresql.org/">postgreSQL</a>, but the same principles can be apply to most databases.</p>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_laying_down_the_terrain">Laying down the terrain</h5>
+<div class="imageblock">
+<div class="content">
+<img src="http://i.imgur.com/kkizfzd.png" alt="kkizfzd.png">
+</div>
+</div>
+<div class="paragraph">
+<p>Pretty much, I have 3 tables&#8230;&#8203;
+A, B and C (yeah, great naming).</p>
+</div>
+<div class="paragraph">
+<p>A is the one that contains my most relevant data.
+B is a mandatory join, contains some data we need.
+C is an optinal join, contains some data we need, C also know B and it&#8217;s mandatory.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_my_original_query">My original query</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>     select A.*, B.*, C.*
+     from
+         A A
+     join B B on A.B_id=B.id
+     left join C C on A.C_id=C.id
+     where
+         A.B_id='my_cool_id'
+     order by
+         A.order asc
+     limit
+         100</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In simple terms, select all from A, B and C filtered by B_id.</p>
+</div>
+<div class="paragraph">
+<p>This query was taking 122 ms to return 100 rows&#8230;&#8203; long ago <a href="https://github.com/miere">one guy</a> told me that if a query was taking more then 5 ms, would be nice to revisit it and optimize it.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_asking_postgres_where_the_problem_is">Asking postgres where the problem is</h5>
+<div class="paragraph">
+<p>Don&#8217;t hurt to ask, right?
+Maybe postgres know where the problem lies. Let&#8217;s use the <a href="http://www.postgresql.org/docs/current/static/sql-explain.html">explain</a> statement to request the execution plan:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>Limit  (cost=20499.31..20499.56 rows=100 width=4505) (actual time=121.947..121.956 rows=100 loops=1)
+  Buffers: shared hit=23034 read=10916
+  -&gt;  Sort  (cost=20499.31..20519.32 rows=8003 width=4505) (actual time=121.946..121.947 rows=100 loops=1)
+        Sort Key: A.order
+        Sort Method: top-N heapsort  Memory: 126kB
+        Buffers: shared hit=23034 read=10916
+        -&gt;  Nested Loop Left Join  (cost=0.28..20193.44 rows=8003 width=4505) (actual time=58.003..117.868 rows=7590 loops=1)
+              Buffers: shared hit=23034 read=10916
+              -&gt;  Nested Loop  (cost=0.00..17364.52 rows=8003 width=3323) (actual time=57.960..89.738 rows=7590 loops=1)
+                    Buffers: shared hit=264 read=10916
+                    -&gt;  Seq Scan on B B  (cost=0.00..40.58 rows=1 width=1614) (actual time=0.013..0.061 rows=1 loops=1)
+                          Filter: ((id)::text = 'my_cool_id'::text)
+                          Rows Removed by Filter: 325
+                          Buffers: shared hit=36
+                    -&gt;  Seq Scan on A A  (cost=0.00..17243.91 rows=8003 width=1709) (actual time=57.942..88.880 rows=7590 loops=1)
+                          Filter: ((B_id)::text = 'my_cool_id'::text)
+                          Rows Removed by Filter: 480403
+                          Buffers: shared hit=228 read=10916
+              -&gt;  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1182) (actual time=0.003..0.003 rows=1 loops=7590)
+                    Index Cond: ((A.C_id)::text = (id)::text)
+                    Buffers: shared hit=22770
+Total runtime: 122.064 ms</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Before I start optimizing based on what I can see on explain, remember when I said C also "knows" B?
+That is where I start.  I also included the B filter on all joins.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>     select A.*, B.*, C.*
+     from A A
+     join B B on A.B_id=B.id and B.id='my_cool_id'
+     left join C C on A.C_id=C.id and C.B_id='my_cool_id'
+     where
+         A.B_id='my_cool_id'
+     order by
+         A.order asc</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This simple action reduces the cost of the query a little bit:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>Limit  (cost=17803.87..17804.12 rows=100 width=4505) (actual time=101.080..101.090 rows=100 loops=1)
+  Buffers: shared hit=297 read=10948
+  -&gt;  Sort  (cost=17803.87..17823.88 rows=8003 width=4505) (actual time=101.079..101.082 rows=100 loops=1)
+        Sort Key: A.order
+        Sort Method: top-N heapsort  Memory: 126kB
+        Buffers: shared hit=297 read=10948
+        -&gt;  Hash Left Join  (cost=103.10..17498.00 rows=8003 width=4505) (actual time=62.598..97.085 rows=7590 loops=1)
+              Hash Cond: ((A.C_id)::text = (C.id)::text)
+              Buffers: shared hit=297 read=10948
+              -&gt;  Nested Loop  (cost=0.00..17364.52 rows=8003 width=3323) (actual time=62.185..94.505 rows=7590 loops=1)
+                    Buffers: shared hit=232 read=10948
+                    -&gt;  Seq Scan on B B  (cost=0.00..40.58 rows=1 width=1614) (actual time=0.015..0.065 rows=1 loops=1)
+                          Filter: ((id)::text = 'my_cool_id'::text)
+                          Rows Removed by Filter: 325
+                          Buffers: shared hit=36
+                    -&gt;  Seq Scan on A A  (cost=0.00..17243.91 rows=8003 width=1709) (actual time=62.165..93.658 rows=7590 loops=1)
+                          Filter: ((B_id)::text = 'my_cool_id'::text)
+                          Rows Removed by Filter: 480403
+                          Buffers: shared hit=196 read=10948
+              -&gt;  Hash  (cost=102.22..102.22 rows=70 width=1182) (actual time=0.395..0.395 rows=66 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                    Buffers: shared hit=65
+                    -&gt;  Seq Scan on C C  (cost=0.00..102.22 rows=70 width=1182) (actual time=0.028..0.385 rows=66 loops=1)
+                          Filter: ((B_id)::text = 'my_cool_id'::text)
+                          Rows Removed by Filter: 2883
+                          Buffers: shared hit=65
+Total runtime: 101.213 ms</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That alone shaves 20 ms, nothing special, but it&#8217;s a start.  The query still take 101 ms to go, it&#8217;s better, but ain&#8217;t THAT better.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_1st_problem_code_seq_scan_code">1st problem: <code>Seq Scan</code></h5>
+<div class="paragraph">
+<p>In general, <code>Seq Scan</code> is a bad thing.  In this case, <code>Seq Scan</code> is happening on both FK.</p>
+</div>
+<div class="paragraph">
+<p>So I will introduce indexes here:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>create index on C(B_id);
+create index on A(B_id);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Resulting in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>Limit  (cost=14258.70..14258.95 rows=100 width=4505) (actual time=32.903..32.908 rows=100 loops=1)
+  Buffers: shared hit=23004
+  -&gt;  Sort  (cost=14258.70..14278.70 rows=8003 width=4505) (actual time=32.902..32.904 rows=100 loops=1)
+        Sort Key: A.order
+        Sort Method: top-N heapsort  Memory: 126kB
+        Buffers: shared hit=23004
+        -&gt;  Nested Loop Left Join  (cost=223.00..13952.83 rows=8003 width=4505) (actual time=0.509..28.865 rows=7590 loops=1)
+              Buffers: shared hit=23004
+              -&gt;  Nested Loop  (cost=222.72..11123.91 rows=8003 width=3323) (actual time=0.501..2.082 rows=7590 loops=1)
+                    Buffers: shared hit=234
+                    -&gt;  Index Scan using B_pkey on B B  (cost=0.27..8.29 rows=1 width=1614) (actual time=0.009..0.009 rows=1 loops=1)
+                          Index Cond: ((id)::text = 'my_cool_id'::text)
+                          Buffers: shared hit=3
+                    -&gt;  Bitmap Heap Scan on A A  (cost=222.45..11035.59 rows=8003 width=1709) (actual time=0.488..1.042 rows=7590 loops=1)
+                          Recheck Cond: ((B_id)::text = 'my_cool_id'::text)
+                          Buffers: shared hit=231
+                          -&gt;  Bitmap Index Scan on A_B_id_idx  (cost=0.00..220.45 rows=8003 width=0) (actual time=0.471..0.471 rows=7590 loops=1)
+                                Index Cond: ((B_id)::text = 'my_cool_id'::text)
+                                Buffers: shared hit=40
+              -&gt;  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1182) (actual time=0.003..0.003 rows=1 loops=7590)
+                    Index Cond: ((A.C_id)::text = (id)::text)
+                    Buffers: shared hit=22770
+Total runtime: 33.009 ms</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This resulted in a more significant cost reduction and a huge time reduction.  From 101ms to 33ms.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_2nd_problem_code_sort_code">2nd problem: <code>Sort</code></h5>
+<div class="paragraph">
+<p>To sort, postgresql need to "load" all records and that takes time.  Since my query is only ordered by <code>order</code> I can create an index on it an shave most of the sort time.</p>
+</div>
+<div class="paragraph">
+<p>I also realized that A.order + A.B_id needed an unique index to meet my business rules.
+So I needed a new index to handle that:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>CREATE UNIQUE INDEX ON A (order, B_id);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>Limit  (cost=0.98..525.06 rows=100 width=4505) (actual time=0.062..1.150 rows=100 loops=1)
+  Buffers: shared hit=307 read=77
+  -&gt;  Nested Loop Left Join  (cost=0.98..41943.12 rows=8003 width=4505) (actual time=0.062..1.146 rows=100 loops=1)
+        Buffers: shared hit=307 read=77
+        -&gt;  Nested Loop  (cost=0.70..39114.20 rows=8003 width=3323) (actual time=0.053..0.752 rows=100 loops=1)
+              Buffers: shared hit=7 read=77
+              -&gt;  Index Scan using A_order_B_id_idx on A A  (cost=0.42..39005.87 rows=8003 width=1709) (actual time=0.042..0.699 rows=100 loops=1)
+                    Index Cond: ((B_id)::text = 'my_cool_id'::text)
+                    Buffers: shared hit=4 read=77
+              -&gt;  Materialize  (cost=0.27..8.30 rows=1 width=1614) (actual time=0.000..0.000 rows=1 loops=100)
+                    Buffers: shared hit=3
+                    -&gt;  Index Scan using B_pkey on B B  (cost=0.27..8.29 rows=1 width=1614) (actual time=0.008..0.008 rows=1 loops=1)
+                          Index Cond: ((id)::text = 'my_cool_id'::text)
+                          Buffers: shared hit=3
+        -&gt;  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1182) (actual time=0.003..0.004 rows=1 loops=100)
+              Index Cond: ((A.C_id)::text = (id)::text)
+              Buffers: shared hit=300
+Total runtime: 1.220 ms</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now we are talking business. It&#8217;s taking only 1/100 of the original time to grab the data I need.
+This is the time I consider my work done and pack my things and hit home.  And so I did.</p>
+</div>
+<div class="paragraph">
+<p>But, while I was writting this, I noticed that I made this index "out of order".  In general, is a good idea to put the low cardinatily item first and the highest cardinality latter.  So I create a new index on the correct order:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>CREATE UNIQUE INDEX ON A (B_id, order);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>Limit  (cost=0.98..331.64 rows=100 width=4505) (actual time=0.056..0.468 rows=100 loops=1)
+  Buffers: shared hit=307 read=4
+  -&gt;  Nested Loop Left Join  (cost=0.98..26464.27 rows=8003 width=4505) (actual time=0.055..0.463 rows=100 loops=1)
+        Buffers: shared hit=307 read=4
+        -&gt;  Nested Loop  (cost=0.70..23635.35 rows=8003 width=3323) (actual time=0.044..0.100 rows=100 loops=1)
+              Buffers: shared hit=7 read=4
+              -&gt;  Index Scan using A_B_id_order_idx on A A  (cost=0.42..23527.02 rows=8003 width=1709) (actual time=0.035..0.061 rows=100 loops=1)
+                    Index Cond: ((B_id)::text = 'my_cool_id'::text)
+                    Buffers: shared hit=4 read=4
+              -&gt;  Materialize  (cost=0.27..8.30 rows=1 width=1614) (actual time=0.000..0.000 rows=1 loops=100)
+                    Buffers: shared hit=3
+                    -&gt;  Index Scan using B_pkey on B B  (cost=0.27..8.29 rows=1 width=1614) (actual time=0.006..0.006 rows=1 loops=1)
+                          Index Cond: ((id)::text = 'my_cool_id'::text)
+                          Buffers: shared hit=3
+        -&gt;  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1182) (actual time=0.003..0.003 rows=1 loops=100)
+              Index Cond: ((A.C_id)::text = (id)::text)
+              Buffers: shared hit=300
+Total runtime: 0.530 ms</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The original index is now ignored and only the new one is used, dropping the time a little bit more. This plunger time query time to half ms =)</p>
+</div>
+<div class="paragraph">
+<p>In the end, I beat the 5 ms rule, and not only that, but 10 times better.</p>
+</div>
+</div>
+        </section>
+
+        <footer class="post-footer">
+
+
+            <figure class="author-image">
+                <a class="img" href="" style="background-image: url(https://avatars.githubusercontent.com/u/136590?v=3)"><span class="hidden">Marvin Froeder's Picture</span></a>
+            </figure>
+
+            <section class="author">
+                <h4><a href="">Marvin Froeder</a></h4>
+
+                    <p>Read <a href="">more posts</a> by this author.</p>
+                <div class="author-meta">
+                    <span class="author-location icon-location">The coolest little capital in the world - Wellington, NZ</span>
+                    <span class="author-link icon-link"><a href="http://about.me/velo/">http://about.me/velo/</a></span>
+                </div>
+            </section>
+
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="https://twitter.com/share?text=Query%20Optimization%20101&amp;url=https://velo.github.io/2016/05/08/Query-Optimization-101.html"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://velo.github.io/2016/05/08/Query-Optimization-101.html"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=https://velo.github.io/2016/05/08/Query-Optimization-101.html"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+
+        <section class="post-comments">
+          <div id="disqus_thread"></div>
+          <script type="text/javascript">
+          var disqus_shortname = 'compiletimecheck'; // required: replace example with your forum shortname
+          /* * * DON'T EDIT BELOW THIS LINE * * */
+          (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+          </script>
+          <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+          <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        </section>
+
+
+    </article>
+
+</main>
+
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="https://velo.github.io">Compile time check</a> &copy; 2016</section>
+        <section class="poweredby">Proudly published with <a href="http://hubpress.io">HubPress</a></section>
+    </footer>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
+      <script type="text/javascript">
+        jQuery( document ).ready(function() {
+          // change date with ago
+          jQuery('ago.ago').each(function(){
+            var element = jQuery(this).parent();
+            element.html( moment(element.text()).fromNow());
+          });
+        });
+
+        hljs.initHighlightingOnLoad();      
+      </script>
+
+    <script type="text/javascript" src="//velo.github.io/themes/Casper/assets/js/jquery.fitvids.js?v=1.0.0"></script>
+    <script type="text/javascript" src="//velo.github.io/themes/Casper/assets/js/index.js?v=1.0.0"></script>
+
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-77184766-1', 'auto');
+    ga('send', 'pageview');
+
+    </script>
+</body>
+</html>
