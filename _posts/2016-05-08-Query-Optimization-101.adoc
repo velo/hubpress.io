@@ -35,7 +35,7 @@ C is an optinal join, contains some data we need, C also know B and it's mandato
 
 In simple terms, select all from A, B and C filtered by B_id.
 
-This query was taking 147 ms to return 100 rows... long ago https://github.com/miere[one guy] told me that if a query was taking more then 5 ms, would be nice to revisit it and optimize it.
+This query was taking 122 ms to return 100 rows... long ago https://github.com/miere[one guy] told me that if a query was taking more then 5 ms, would be nice to revisit it and optimize it.
 
 
 ##### Asking postgres where the problem is
@@ -155,56 +155,62 @@ This resulted in a more significant cost reduction and a huge time reduction.  F
 
 ##### 2nd problem: `Sort`
 
-To sort, postgresql need to "load" all records, and that takes time.
-While I was doing this, I realized that A.order + A.B_id needed an unique index.
+To sort, postgresql need to "load" all records and that takes time.  Since my query is only ordered by `order` I can create an index on it an shave most of the sort time.
+
+I also realized that A.order + A.B_id needed an unique index to meet my business rules.
 So I needed a new index to handle that:
 ```
 CREATE UNIQUE INDEX ON A (order, B_id);
 ```
 ```
-Nested Loop Left Join  (cost=0.85..37646.14 rows=7903 width=4498)
-  ->  Nested Loop  (cost=0.57..34884.21 rows=7903 width=3317)
-        ->  Index Scan using A_order_B_id_idx on A A  (cost=0.42..34777.25 rows=7903 width=1709)
-              Index Cond: ((B_id)::text = 'my_cool_id'::text)
-        ->  Materialize  (cost=0.14..8.17 rows=1 width=1608)
-              ->  Index Scan using B_pkey on B B  (cost=0.14..8.16 rows=1 width=1608)
-                    Index Cond: ((id)::text = 'my_cool_id'::text)
-  ->  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1181)
-        Index Cond: ((A.C_id)::text = (id)::text)
-        Filter: ((B_id)::text = 'my_cool_id'::text)
+Limit  (cost=0.98..525.06 rows=100 width=4505) (actual time=0.062..1.150 rows=100 loops=1)
+  Buffers: shared hit=307 read=77
+  ->  Nested Loop Left Join  (cost=0.98..41943.12 rows=8003 width=4505) (actual time=0.062..1.146 rows=100 loops=1)
+        Buffers: shared hit=307 read=77
+        ->  Nested Loop  (cost=0.70..39114.20 rows=8003 width=3323) (actual time=0.053..0.752 rows=100 loops=1)
+              Buffers: shared hit=7 read=77
+              ->  Index Scan using A_order_B_id_idx on A A  (cost=0.42..39005.87 rows=8003 width=1709) (actual time=0.042..0.699 rows=100 loops=1)
+                    Index Cond: ((B_id)::text = 'my_cool_id'::text)
+                    Buffers: shared hit=4 read=77
+              ->  Materialize  (cost=0.27..8.30 rows=1 width=1614) (actual time=0.000..0.000 rows=1 loops=100)
+                    Buffers: shared hit=3
+                    ->  Index Scan using B_pkey on B B  (cost=0.27..8.29 rows=1 width=1614) (actual time=0.008..0.008 rows=1 loops=1)
+                          Index Cond: ((id)::text = 'my_cool_id'::text)
+                          Buffers: shared hit=3
+        ->  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1182) (actual time=0.003..0.004 rows=1 loops=100)
+              Index Cond: ((A.C_id)::text = (id)::text)
+              Buffers: shared hit=300
+Total runtime: 1.220 ms
 ```
-The cost when down a little further, but, the time to execute this rised. Went from 40ms to 48ms.
+Now we are talking business. It's taking only 1/100 of the original time to grab the data I need.
+This is the time I consider my work done and pack my things and hit home.  And so I did.
 
-Then it strook me, the index was "out of order".  In general, is a good idea to put the low cardinatily item first and the highest cardinality latter.  So I did it:
+But, while I was writting this, I noticed that I made this index "out of order".  In general, is a good idea to put the low cardinatily item first and the highest cardinality latter.  So I create a new index on the correct order:
 ```
-DROP INDEX idx_B_id_order_A;
 CREATE UNIQUE INDEX ON A (B_id, order);
 ```
 ```
-Nested Loop Left Join  (cost=0.85..25272.46 rows=7650 width=4500)
-  ->  Nested Loop  (cost=0.57..22580.96 rows=7650 width=3319)
-        ->  Index Scan using A_B_id_order_idx on A A  (cost=0.42..22477.17 rows=7650 width=1709)
-              Index Cond: ((B_id)::text = 'my_cool_id'::text)
-        ->  Materialize  (cost=0.14..8.17 rows=1 width=1610)
-              ->  Index Scan using B_pkey on B B  (cost=0.14..8.16 rows=1 width=1610)
-                    Index Cond: ((id)::text = 'my_cool_id'::text)
-  ->  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1181)
-        Index Cond: ((A.C_id)::text = (id)::text)
-        Filter: ((B_id)::text = 'my_cool_id'::text)
+Limit  (cost=0.98..331.64 rows=100 width=4505) (actual time=0.056..0.468 rows=100 loops=1)
+  Buffers: shared hit=307 read=4
+  ->  Nested Loop Left Join  (cost=0.98..26464.27 rows=8003 width=4505) (actual time=0.055..0.463 rows=100 loops=1)
+        Buffers: shared hit=307 read=4
+        ->  Nested Loop  (cost=0.70..23635.35 rows=8003 width=3323) (actual time=0.044..0.100 rows=100 loops=1)
+              Buffers: shared hit=7 read=4
+              ->  Index Scan using A_B_id_order_idx on A A  (cost=0.42..23527.02 rows=8003 width=1709) (actual time=0.035..0.061 rows=100 loops=1)
+                    Index Cond: ((B_id)::text = 'my_cool_id'::text)
+                    Buffers: shared hit=4 read=4
+              ->  Materialize  (cost=0.27..8.30 rows=1 width=1614) (actual time=0.000..0.000 rows=1 loops=100)
+                    Buffers: shared hit=3
+                    ->  Index Scan using B_pkey on B B  (cost=0.27..8.29 rows=1 width=1614) (actual time=0.006..0.006 rows=1 loops=1)
+                          Index Cond: ((id)::text = 'my_cool_id'::text)
+                          Buffers: shared hit=3
+        ->  Index Scan using C_pkey on C C  (cost=0.28..0.34 rows=1 width=1182) (actual time=0.003..0.003 rows=1 loops=100)
+              Index Cond: ((A.C_id)::text = (id)::text)
+              Buffers: shared hit=300
+Total runtime: 0.530 ms
 ```
 
-The cost did a real drop and so did the time.  Query now runs in 22 ms.
-The cost drop by half and the time 7 times.  Not bad at all!
+The original index is now ignored and only the new one is used, dropping the time a little bit more. This plunger time query time to half ms =)
 
-As a final optimization step, I decided to clusterize the database.
-By clustering I mean http://www.postgresql.org/docs/current/static/sql-cluster.html[this].
+In the end, I beat the 5 ms rule, and not only that, but 10 times better.
 
-Cluster physically reorder a table based on a given index.  It's a one time operation.  So I decided to cluster based on the recent created index. 
-
-```
-CLUSTER A USING idx_B_id_order_A
-```
-
-This plunger time query time to 12 ms =)
-
-I did not beat the 5 ms rule, but 10 times was good enough for now.  Also, this was on my local machine, the server is way better.
