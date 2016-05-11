@@ -1,0 +1,41 @@
+One Formatter to rule them all!
+===============================
+
+:published_at: 2014-03-17
+
+:hp-tags: maven, standards
+
+Here we use pull request every day, every time.  All work is pull request oriented (thank you so much github).
+
+But, a multicultural environment (multi-OSes, meaning multiple encoding + multiple line endings, multi-IDEs) can be a sore sight for eyes.
+
+Here is a example:
+https://github.com/velo/querydsl/pull/3
+
+Someone though it was a nice idea to change the code format for a class.
+
+
+
+691 lines of code changed.  How many meaningful? ZERO! I know it is ZERO cause I made it that way, but sometimes there is a single line changed and other 690 of pure chaos!
+
+To help, some guys came up with a maven-formatter-plugin... It works, maven build breaks if you start doing funky changes.
+
+That helped, a lot, but we had to open console and launch maven, it wasn't good enough.  Better then nothing, but still far from reasonable.
+
+I looked and the project felt abandoned.  And I needed it. Was time to act.  Was time to create a fork.
+https://github.com/velo/maven-formatter-plugin
+
+The forked version presents some advantages:
+
+support javascript formatting (as well java inherited from the original code)
+contains an m2e configurator
+uses eclipse kepler formmater (getting ready for luna soon)
+uses N threads in order to get things done faster
+At this point is necessary to install the m2e configurator by hand, but still, it helps, A LOT!
+Update site: http://velo.github.io/maven-formatter-plugin/p2/LATEST
+
+Once installed, the plugin will set eclipse formatter to the same used on maven.
+
+We now are free from pull requests with meaningless changes.  All business now.
+
+Enjoy!
