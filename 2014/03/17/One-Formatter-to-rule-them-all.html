@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>One Formatter to rule them all!</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="//velo.github.io/themes/Casper/favicon.ico">
+
+    <link rel="stylesheet" type="text/css" href="//velo.github.io/themes/Casper/assets/css/screen.css?v=1.0.0" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+
+    <link rel="canonical" href="https://velo.github.io/2014/03/17/One-Formatter-to-rule-them-all.html" />
+    
+    <meta property="og:site_name" content="Compile time check" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="One Formatter to rule them all!" />
+    <meta property="og:description" content="Here we use pull request every day, every time.  All work is pull request oriented (thank you so much github). But, a multicultural environment (multi-OSes, meaning multiple encoding + multiple line endings, multi-IDEs) can be a sore sight for eyes. Here..." />
+    <meta property="og:url" content="https://velo.github.io/2014/03/17/One-Formatter-to-rule-them-all.html" />
+    <meta property="article:published_time" content="2014-03-16T11:00:00.000Z" />
+    <meta property="article:modified_time" content="2016-05-11T07:27:25.515Z" />
+    <meta property="article:tag" content="maven" />
+    <meta property="article:tag" content="standards" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="One Formatter to rule them all!" />
+    <meta name="twitter:description" content="Here we use pull request every day, every time.  All work is pull request oriented (thank you so much github). But, a multicultural environment (multi-OSes, meaning multiple encoding + multiple line endings, multi-IDEs) can be a sore sight for eyes. Here..." />
+    <meta name="twitter:url" content="https://velo.github.io/2014/03/17/One-Formatter-to-rule-them-all.html" />
+    
+    <script type="application/ld+json">
+{
+    "@context": "http://schema.org",
+    "@type": "Article",
+    "publisher": "Compile time check",
+    "author": {
+        "@type": "Person",
+        "name": "Marvin Froeder",
+        "image": "https://avatars.githubusercontent.com/u/136590?v=3",
+        "url": "undefined/author/undefined",
+        "sameAs": "http://about.me/velo/"
+    },
+    "headline": "One Formatter to rule them all!",
+    "url": "https://velo.github.io/2014/03/17/One-Formatter-to-rule-them-all.html",
+    "datePublished": "2014-03-16T11:00:00.000Z",
+    "dateModified": "2016-05-11T07:27:25.515Z",
+    "keywords": "maven,  standards",
+    "description": "Here we use pull request every day, every time.  All work is pull request oriented (thank you so much github). But, a multicultural environment (multi-OSes, meaning multiple encoding + multiple line endings, multi-IDEs) can be a sore sight for eyes. Here..."
+}
+    </script>
+
+    <meta name="generator" content="Ghost ?" />
+    <link rel="alternate" type="application/rss+xml" title="Compile time check" href="https://velo.github.io/rss" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/default.min.css">
+</head>
+<body class="post-template tag-maven tag-standards">
+
+    
+
+
+<header class="main-header post-head no-cover">
+    <nav class="main-nav  clearfix">
+        <a class="back-button icon-arrow-left" href="https://velo.github.io">Home</a>
+        <!-- <a class="subscribe-button icon-feed" href="https://velo.github.io/rss/">Subscribe</a> -->
+    </nav>
+</header>
+
+<main class="content" role="main">
+
+    <article class="post tag-maven tag-standards">
+
+        <header class="post-header">
+            <h1 class="post-title">One Formatter to rule them all!</h1>
+            <section class="post-meta">
+                <time class="post-date" datetime="2014-03-17">17 March 2014</time>  on <a href="https://velo.github.io/tag/maven">maven</a>, <a href="https://velo.github.io/tag/standards"> standards</a>
+            </section>
+        </header>
+
+        <section class="post-content">
+            <div class="paragraph">
+<p>Here we use pull request every day, every time.  All work is pull request oriented (thank you so much github).</p>
+</div>
+<div class="paragraph">
+<p>But, a multicultural environment (multi-OSes, meaning multiple encoding + multiple line endings, multi-IDEs) can be a sore sight for eyes.</p>
+</div>
+<div class="paragraph">
+<p>Here is a example:
+<a href="https://github.com/velo/querydsl/pull/3" class="bare">https://github.com/velo/querydsl/pull/3</a></p>
+</div>
+<div class="paragraph">
+<p>Someone though it was a nice idea to change the code format for a class.</p>
+</div>
+<div class="paragraph">
+<p>691 lines of code changed.  How many meaningful? ZERO! I know it is ZERO cause I made it that way, but sometimes there is a single line changed and other 690 of pure chaos!</p>
+</div>
+<div class="paragraph">
+<p>To help, some guys came up with a maven-formatter-plugin&#8230;&#8203; It works, maven build breaks if you start doing funky changes.</p>
+</div>
+<div class="paragraph">
+<p>That helped, a lot, but we had to open console and launch maven, it wasn&#8217;t good enough.  Better then nothing, but still far from reasonable.</p>
+</div>
+<div class="paragraph">
+<p>I looked and the project felt abandoned.  And I needed it. Was time to act.  Was time to create a fork.
+<a href="https://github.com/velo/maven-formatter-plugin" class="bare">https://github.com/velo/maven-formatter-plugin</a></p>
+</div>
+<div class="paragraph">
+<p>The forked version presents some advantages:</p>
+</div>
+<div class="paragraph">
+<p>support javascript formatting (as well java inherited from the original code)
+contains an m2e configurator
+uses eclipse kepler formmater (getting ready for luna soon)
+uses N threads in order to get things done faster
+At this point is necessary to install the m2e configurator by hand, but still, it helps, A LOT!
+Update site: <a href="http://velo.github.io/maven-formatter-plugin/p2/LATEST" class="bare">http://velo.github.io/maven-formatter-plugin/p2/LATEST</a></p>
+</div>
+<div class="paragraph">
+<p>Once installed, the plugin will set eclipse formatter to the same used on maven.</p>
+</div>
+<div class="paragraph">
+<p>We now are free from pull requests with meaningless changes.  All business now.</p>
+</div>
+<div class="paragraph">
+<p>Enjoy!</p>
+</div>
+        </section>
+
+        <footer class="post-footer">
+
+
+            <figure class="author-image">
+                <a class="img" href="" style="background-image: url(https://avatars.githubusercontent.com/u/136590?v=3)"><span class="hidden">Marvin Froeder's Picture</span></a>
+            </figure>
+
+            <section class="author">
+                <h4><a href="">Marvin Froeder</a></h4>
+
+                    <p>Read <a href="">more posts</a> by this author.</p>
+                <div class="author-meta">
+                    <span class="author-location icon-location">The coolest little capital in the world - Wellington, NZ</span>
+                    <span class="author-link icon-link"><a href="http://about.me/velo/">http://about.me/velo/</a></span>
+                </div>
+            </section>
+
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="https://twitter.com/share?text=One%20Formatter%20to%20rule%20them%20all!&amp;url=https://velo.github.io/2014/03/17/One-Formatter-to-rule-them-all.html"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://velo.github.io/2014/03/17/One-Formatter-to-rule-them-all.html"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=https://velo.github.io/2014/03/17/One-Formatter-to-rule-them-all.html"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+
+        <section class="post-comments">
+          <div id="disqus_thread"></div>
+          <script type="text/javascript">
+          var disqus_shortname = 'compiletimecheck'; // required: replace example with your forum shortname
+          /* * * DON'T EDIT BELOW THIS LINE * * */
+          (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+          </script>
+          <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+          <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        </section>
+
+
+    </article>
+
+</main>
+
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="https://velo.github.io">Compile time check</a> &copy; 2016</section>
+        <section class="poweredby">Proudly published with <a href="http://hubpress.io">HubPress</a></section>
+    </footer>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
+      <script type="text/javascript">
+        jQuery( document ).ready(function() {
+          // change date with ago
+          jQuery('ago.ago').each(function(){
+            var element = jQuery(this).parent();
+            element.html( moment(element.text()).fromNow());
+          });
+        });
+
+        hljs.initHighlightingOnLoad();      
+      </script>
+
+    <script type="text/javascript" src="//velo.github.io/themes/Casper/assets/js/jquery.fitvids.js?v=1.0.0"></script>
+    <script type="text/javascript" src="//velo.github.io/themes/Casper/assets/js/index.js?v=1.0.0"></script>
+
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-77184766-1', 'auto');
+    ga('send', 'pageview');
+
+    </script>
+</body>
+</html>
