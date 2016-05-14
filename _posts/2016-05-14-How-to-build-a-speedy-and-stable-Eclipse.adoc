@@ -1,0 +1,79 @@
+
+How to build a speedy and stable Eclipse
+========================================
+
+:hp-tags: eclipse, automation
+
+http://www.eclipse.org/[Eclipse] can be a major source of pain.  Instabilities, poor performance, memory usage issues, new version migration,  in short, life is too short to use Eclipse.  Or, it can be stable, lean and easy to upgrade.
+
+What does drag Eclipse down?  Pretty much the plugins!  And the problem start at distribution selection.  There are 12 different distributions.
+
+Let's look at Java Distribution:
+
+image::http://velo.github.io/images/my-ide/eclipse-for-java-developers.PNG[]
+
+On this list, there are at least 2 things I don't use: mylyn and windowbuilder
+There is also code recommenders, that I opted out, and buildship that you may or may not use.
+
+So, the skinny "for Java Developers" contains 3 plugins I don't want to. Also, it contains none of the 11 plugins I really use nor any of my 8 m2e configurator plugins.
+
+In the past, I try a variety of things, from storing it on git to automate using http://help.eclipse.org/mars/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Fguide%2Fp2_director.html[p2 director].  But I still would start with a distribution that contains more then I wanted.  This is when I discovered https://github.com/takari/takari-ide[Takari IDE]!
+
+Takari IDE allowed me to build my own Eclipse, with only what I needed.
+
+Takari IDE is driven by https://github.com/velo/my-ide/blob/master/product.yml[product.yml file].
+
+
+##### How to build your own Eclipse distribution
+
+Right now if you want to build your own Eclipse distribution edit the `product.yml` file and run the following command:
+
+```
+./product.rb
+```
+
+This will generate all the appropriate Maven build files and then run for you.
+
+This will give you an Eclipse distribution in the `io.tesla.ide.rcp.product` project in the `target` director
+
+This is a bit of a hack right now because the POMs, product and feature files are generated for the Tycho build that produces the distribution, but there is still a directory that contains static resources. Eventually I would like to bundle up the static resources in a resource bundle that can be configured, but for now it is what it is. You can create your own custom Eclipse distribution it's just not 100% parameterized.
+
+A full example of what a product file might look like can be found https://github.com/velo/my-ide/blob/master/product.yml[here]:
+
+
+##### `product.yml` explained
+
+The magic happend inside `featureSets` section.
+
+```
+featureSets: 
+ -
+  eclipse:
+   repo: http://download.eclipse.org/releases/mars
+   features:
+    - id: org.eclipse.platform
+    - id: org.eclipse.rcp
+    - id: org.eclipse.jdt
+    - id: org.eclipse.equinox.p2.user.ui
+    - id: org.eclipse.egit
+    - id: io.tesla.ide.feature
+    - id: org.eclipse.epp.mpc
+    - id: org.eclipse.linuxtools.docker.feature
+ - 
+  tycho-configurator:
+   repo: https://repository.takari.io/content/sites/m2e.extras/m2eclipse-tycho/0.9.0/N/LATEST/
+   features:
+    - id: org.sonatype.tycho.m2e.feature
+```
+
+I just need to declare the p2 site and the features I wanna grab from it.
+
+Once you pick your poison, is just a matter of https://travis-ci.org/velo/my-ide[building it]
+
+image::http://velo.github.io/images/my-ide/build-success.PNG[]
+
+SUCCESS!!!
+
+The cool thing, is I could swap `/releases/mars` with `/releases/neon`, which https://github.com/velo/my-ide/commit/13702eea0bacf02e1662e99f1b91075c38d8cfb7[I did]. 
+
+Now I can try my cutting edge IDE, with all my plugins and rollback if necessary.
