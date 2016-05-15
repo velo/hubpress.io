@@ -1,0 +1,64 @@
+How to ban classes?
+===================
+
+:published_at: 2014-07-24
+
+:hp-tags: compile-check, maven 
+
+I love catching problems at http://velo.github.io/tag/compile-check/[compile time].
+
+This week I came across an odd situation.  I need to make sure nobody was using 'javax.ws.rs.Path' class.
+
+So how can I ban a give class from my project?
+
+It looked like a job for maven enforcer plugin!  Nop, that was no good. There is no https://maven.apache.org/enforcer/enforcer-rules/[enforcer rules] for this. May be http://www.mojohaus.org/extra-enforcer-rules/[extra enforcer rules]?  No rule there as well.
+
+After searching a little bit more I found a plugin to do that!
+
+Restrict-maven-plugin allowed me to do so.
+
+```
+<plugin>
+  <groupId>com.yamanyar</groupId>
+  <artifactId>restrict-maven-plugin</artifactId>
+  <version>0.6</version>
+  <executions>
+    <execution>
+      <phase>process-classes</phase>
+      <goals>
+        <goal>restrict</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <continueOnError>false</continueOnError>
+    <restrictions>
+      <restriction>com.contaazul.* to javax.ws.rs.Path</restriction>
+    </restrictions>
+  </configuration>
+</plugin>
+```
+
+Easy no?
+
+Now if someone add this by mistake maven will let us know:
+```
+[error] Restricted access from:(com.contaazul.MyClass.class) com.contaazul.MyClass to: javax.ws.rs.Path due to rule [1-1]
+[error] Build is broken due to 1 restriction policies!
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 45.133 s (Wall Clock)
+[INFO] Finished at: 2014-07-24T10:20:44-03:00
+[INFO] Final Memory: 60M/1247M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal com.yamanyar:restrict-maven-plugin:0.4:restrict (default) on project contaazul-app-business: There are 1 access exceptions! -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+```
+
+Way better then catching a bug latter, no?
