@@ -1,0 +1,49 @@
+Getting pull request and sonar playing toghetter
+================================================
+
+:published_at: 2014-08-03
+
+:hp-tags: automation, maven 
+
+One thing I really dislike is duplicated efforts!
+
+I wanna do things once, well done and to last as long it should.
+
+For instance, when I go to the market, I buy whatever I need for the next 2 days but not more then I would need for a week.  This way I can carry it all in a single trip, I have fresh products and don't need to get into market 3 times a day =D
+
+Back to this post.  At my company we are ADDICTED to pull requests!  All work goes to review before it goes to production.  That has N+1 advantages that I won't explore on this post. Anyway we do it, a lot!
+
+But then, we decided to use Sonar to point out obvious problems.
+After we bought a shine new EC2 machine, we setup Sonar, set our CI to run reports once a day and then.... well, then nothing!
+
+We kept falling into same issues sonar was supposed to help us to flush out.
+
+But why?  The sonar report was there, to everyone to see!  Nobody saw it =/
+But why?  Cause sonar was some other place people don't go!
+
+If there was a way to make sonar report to be written at github, on our pull requests.
+
+Googling lead me to nothing.
+Was time to get my hands dirty.
+And so it begun!
+
+https://github.com/velo/sonar-pull-request-integration
+
+After 2 weekends working on it I was ready to show to my co-workers.
+
+image::http://velo.github.io/images/pull-request/sonar-pull-request.png[]
+
+Live at https://github.com/velo/querydsl/pull/1/
+
+Everybody got really excited with this.  So I decided to try this on some really pull request we did on our every day work.  Well, was kinda failure, lots of bugs on my tool.  But after a few hours fixing then SUCCESS!!!
+
+We now adopted this feature under the company organization and are maintaining it since.
+https://github.com/velo/sonar-pull-request-integration
+
+
+To execute this plugin use the following command:
+```
+$ mvn com.contaazul.sonarpullrequestintegration:sonar-github-pull-request-maven-plugin:publish -Dsonar.branch=hazelcast -Dgithub.pullRequestId=1 -Dgithub.repositoryOwner=velo -Dgithub.repositoryName=querydsl -Dgithub.oauth2=**********
+```
+
+Hope it is useful to others.
