@@ -1,7 +1,7 @@
 Getting pull request and sonar playing toghetter
 ================================================
 
-:published_at: 2014-08-03
+:published_at: 2014-03-08
 
 :hp-tags: automation, maven 
 
