@@ -3,7 +3,7 @@ Getting pull request and sonar playing toghetter
 
 :published_at: 2014-03-08
 
-:hp-tags: automation, maven 
+:hp-tags: automation, maven, reuse 
 
 One thing I really dislike is duplicated efforts!
 
