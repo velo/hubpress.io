@@ -5,7 +5,7 @@ Getting pull request and sonar playing toghetter
 
 :hp-tags: automation, maven, reuse 
 
-One thing I really dislike is duplicated efforts!
+One thing I really dislike is http://velo.github.io/tag/reuse/[duplicated efforts]!
 
 I wanna do things once, well done and to last as long it should.
 
