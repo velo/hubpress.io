@@ -81,7 +81,7 @@ public class HelloWorldResource implements HelloWorldClient {
 ```
 * Compile time check on client
 * Code reuse
-* Java client for your API with zero effort
+* Java client for your API with zero effort, ensured to match the server
 
 Now, to invoke the client is a simple https://github.com/velo/jaxrs-with-client/blob/master/server/src/test/java/com/example/helloworld/IntegrationTest.java#L53[code like this]:
 ```
@@ -107,6 +107,7 @@ To sumarize:
 
 * extract interface
 * move interface + DTOs to client project
+* add client dependency on server
 * created a factory to hide feign "complexity" (optional)
 
 Hope that is useful to people out there. Till next time!
