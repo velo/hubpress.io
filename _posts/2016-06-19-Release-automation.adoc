@@ -1,0 +1,69 @@
+Release automation
+==================
+
+:hp-tags: reuse, automation
+
+
+Which is faster: pushing a new release to maven central OR bloging about release automation?
+
+image::http://velo.github.io/images/rultor/result.png[]
+
+Well, I can't write about it under 2 minutes =D
+
+
+##### Who is rultor?
+
+https://github.com/rultor[@rultor] is a bot that automates routine operation on github repositories.  It can automate pull request merges, deploy and release (which is the one I'm presenting here).
+
+Rultor is https://github.com/yegor256/rultor[opensource] and written in java.
+
+
+##### How does it work?
+
+Rultor has it's own yml file, where you add the steps towards a release.
+
+https://github.com/velo/boilerplate.maven/blob/master/.rultor.yml[For instance]:
+```
+release:
+  script:
+    - mvn versions:set "-DnewVersion=${tag}"
+    - git commit -am "${tag}"
+    - mvn deploy -Pci -B -Prelease --settings ../settings.xml -Dgpg.homedir=..
+```
+
+For most of my opensource activity I need only 3 steps:
+
+* Update pom's version
+* commit change
+* run maven deploy
+
+The https://github.com/velo/boilerplate.maven/blob/master/pom.xml#L341[release] profile will take care of generating sources and javadoc files, sign everything with gpg, stage artifacts at sonatype and release staged artifacts.
+
+##### assets
+
+Wait a minute, staging requires passwords and gpg your private keys, where this all come from?
+
+True, all that is manage on rultor.yml https://github.com/velo/boilerplate.maven/blob/master/.rultor.yml#L20[assets section].
+
+```
+assets:
+  secring.gpg: velo/.assets#maven/secring.gpg
+  settings.xml: velo/.assets#maven/settings.xml
+  pubring.gpg: velo/.assets#maven/pubring.gpg
+```
+
+This instructs rultor to download this files from my private .assets repository.
+
+##### Releasing
+
+To release, just create a new https://github.com/velo/maven-formatter-plugin/issues/13[issue] with:
+```
+@rultor release, tag=`1.6.0`
+```
+
+If everything goes ok rultor will create a https://github.com/velo/maven-formatter-plugin/releases/tag/1.6.0[tag] with that release as well.
+
+
+One last tip, since this rultor, travis, maven and all other commonly used tool code boilerplate is repetitive, I created a https://github.com/velo/boilerplate.maven[boilerplate project for maven].  
+
+It may or may not be a good idea for you to have one as well.
