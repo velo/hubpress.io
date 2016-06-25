@@ -1,0 +1,87 @@
+Giving JUnit something like TestNG.@BeforeSuite
+===============================================
+
+
+JUnit is the http://blog.takipi.com/we-analyzed-60678-libraries-on-github-here-are-the-top-100/[Undisputed King] of Java unit test Libraries.
+
+TestNG has a way more compreensive lifecycle management using @Before/@After annotations. There is a really good presentation https://prezi.com/zcv2mk3spo93/testng/[about testNG on prezi].  Slide 22 shows how @Before/After works.
+
+For me, http://testng.org/doc/documentation-main.html#annotations[`@BeforeSuite`] is pretty much essential writting integrations test.
+
+`@BeforeSuite` description: "the annotated method will be run before all tests in this suite have run."
+
+And guess can't do that!
+
+People that do not understand what `@BeforeSuite` does suggests using `@BeforeClass`.  Well, guess what, it ain't the same.
+
+The closest JUnit can get to @BeforeSuite is having a http://stackoverflow.com/questions/8435322/is-there-a-equivalent-of-testngs-beforesuite-in-junit-4[TestSuite annotated with @BeforeClass], but that means you need to manually keep track of your tests:
+```
+@RunWith(MySuite.class)
+@SuiteClasses({FooTest.class, BarTest.class, BazTest.class});
+```
+
+Serious? 2016! For each new test, you need to "remember" to update this.  NO WAY!  This is so freaking insane!
+
+
+===== A better way
+
+So, what is the alternative I can offer? A @ClassRule + https://en.wikipedia.org/wiki/Singleton_pattern[singleton].
+
+Yeah, 2016 and I openned the laptop to suggest people single usage.
+
+image::http://velo.github.io/images/shame.jpg[]
+
+
+Well, pick your poison, manual, error prone Suite or sameful singleton.
+
+===== Example
+
+On each test, I included my @RuleClass, pointing to a singleton:
+```
+public class Test[12] {
+
+    @ClassRule
+    public static SuiteRule rule = SuiteRule.INSTANCE;
+
+    @Test
+    public void setup() {
+        System.out.println("Test[12]");
+    }
+
+}
+```
+
+And the rule would be something like this:
+```
+    public static final SuiteRule INSTANCE = new SuiteRule();
+
+    private final AtomicBoolean initialized = new AtomicBoolean();
+
+    @Override
+    public Statement apply(Statement base, Description description) {
+        if (!initialized.get()) {
+            beforeSuite(description);
+            initialized.set(true);
+        }
+
+        return base;
+    }
+
+    protected void beforeSuite(Description description) {
+        System.out.println("Before suite");
+    }
+```
+
+Running this example printed this:
+```
+Before suite
+Test1
+Test2
+```
+
+
+No rocket science, quite the oposite, a very trivial piece of code, using design patterns that I don't even like, but since I saw so many people asking for it and no good answer, I decided to document a better alternative.
+
+
+The entire example is on https://github.com/velo/junit-before-suite[github].
+
