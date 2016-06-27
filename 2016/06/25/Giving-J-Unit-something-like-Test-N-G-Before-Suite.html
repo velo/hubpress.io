@@ -20,14 +20,14 @@
     <meta property="og:site_name" content="Compile time check" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="Giving JUnit something like TestNG.@BeforeSuite" />
-    <meta property="og:description" content="JUnit is the Undisputed King of Java unit test Libraries. TestNG has a way more compreensive lifecycle management using @Before/@After annotations. There is a really good presentation about testNG on prezi.  Slide 22 shows how @Before/After works. For..." />
+    <meta property="og:description" content="JUnit is the Undisputed King of Java unit test Libraries. TestNG has a way more compreensive lifecycle management using @Before/@After annotations. If you wanna know more, there is a good presentation about testNG on prezi.  Slide 22 shows how..." />
     <meta property="og:url" content="https://velo.github.io/2016/06/25/Giving-J-Unit-something-like-Test-N-G-Before-Suite.html" />
     <meta property="article:published_time" content="2016-06-24T12:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-06-27T07:22:07.515Z" />
+    <meta property="article:modified_time" content="2016-06-27T10:33:46.873Z" />
     
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Giving JUnit something like TestNG.@BeforeSuite" />
-    <meta name="twitter:description" content="JUnit is the Undisputed King of Java unit test Libraries. TestNG has a way more compreensive lifecycle management using @Before/@After annotations. There is a really good presentation about testNG on prezi.  Slide 22 shows how @Before/After works. For..." />
+    <meta name="twitter:description" content="JUnit is the Undisputed King of Java unit test Libraries. TestNG has a way more compreensive lifecycle management using @Before/@After annotations. If you wanna know more, there is a good presentation about testNG on prezi.  Slide 22 shows how..." />
     <meta name="twitter:url" content="https://velo.github.io/2016/06/25/Giving-J-Unit-something-like-Test-N-G-Before-Suite.html" />
     
     <script type="application/ld+json">
@@ -45,8 +45,8 @@
     "headline": "Giving JUnit something like TestNG.@BeforeSuite",
     "url": "https://velo.github.io/2016/06/25/Giving-J-Unit-something-like-Test-N-G-Before-Suite.html",
     "datePublished": "2016-06-24T12:00:00.000Z",
-    "dateModified": "2016-06-27T07:22:07.515Z",
-    "description": "JUnit is the Undisputed King of Java unit test Libraries. TestNG has a way more compreensive lifecycle management using @Before/@After annotations. There is a really good presentation about testNG on prezi.  Slide 22 shows how @Before/After works. For..."
+    "dateModified": "2016-06-27T10:33:46.873Z",
+    "description": "JUnit is the Undisputed King of Java unit test Libraries. TestNG has a way more compreensive lifecycle management using @Before/@After annotations. If you wanna know more, there is a good presentation about testNG on prezi.  Slide 22 shows how..."
 }
     </script>
 
@@ -84,16 +84,16 @@
 <p>JUnit is the <a href="http://blog.takipi.com/we-analyzed-60678-libraries-on-github-here-are-the-top-100/">Undisputed King</a> of Java unit test Libraries.</p>
 </div>
 <div class="paragraph">
-<p>TestNG has a way more compreensive lifecycle management using @Before/@After annotations. There is a really good presentation <a href="https://prezi.com/zcv2mk3spo93/testng/">about testNG on prezi</a>.  Slide 22 shows how @Before/After works.</p>
+<p>TestNG has a way more compreensive lifecycle management using @Before/@After annotations. If you wanna know more, there is a good presentation <a href="https://prezi.com/zcv2mk3spo93/testng/">about testNG on prezi</a>.  Slide 22 shows how @Before/After works.</p>
 </div>
 <div class="paragraph">
 <p>For me, <a href="http://testng.org/doc/documentation-main.html#annotations"><code>@BeforeSuite</code></a> is pretty much essential writting integrations test.</p>
 </div>
 <div class="paragraph">
-<p><code>@BeforeSuite</code> description: "the annotated method will be run before all tests in this suite have run."</p>
+<p><code>@BeforeSuite</code>: "the annotated method will be run before all tests in this suite have run."</p>
 </div>
 <div class="paragraph">
-<p>And guess can&#8217;t do that!</p>
+<p>And you can&#8217;t do that with JUnit!</p>
 </div>
 <div class="paragraph">
 <p>People that do not understand what <code>@BeforeSuite</code> does suggests using <code>@BeforeClass</code>.  Well, guess what, it ain&#8217;t the same.</p>
@@ -115,10 +115,10 @@
 <div class="sect4">
 <h5 id="_a_better_way">A better way</h5>
 <div class="paragraph">
-<p>So, what is the alternative I can offer? A @ClassRule + <a href="https://en.wikipedia.org/wiki/Singleton_pattern">singleton</a>.</p>
+<p>So, what alternative can I offer? <a href="http://junit.org/junit4/javadoc/4.12/org/junit/ClassRule.html">@ClassRule</a> + <a href="https://en.wikipedia.org/wiki/Singleton_pattern">singleton</a>.</p>
 </div>
 <div class="paragraph">
-<p>Yeah, 2016 and I openned the laptop to suggest people to use a singleton.</p>
+<p>Yeah, I openned the laptop to suggest people: use a singleton.</p>
 </div>
 <div class="imageblock">
 <div class="content">
