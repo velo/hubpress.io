@@ -27,12 +27,12 @@ Serious? 2016! For each new test, you need to "remember" to update this.  NO WAY
 
 So, what is the alternative I can offer? A @ClassRule + https://en.wikipedia.org/wiki/Singleton_pattern[singleton].
 
-Yeah, 2016 and I openned the laptop to suggest people single usage.
+Yeah, 2016 and I openned the laptop to suggest people to use a singleton.
 
 image::http://velo.github.io/images/shame.jpg[]
 
 
-Well, pick your poison, manual, error prone Suite or sameful singleton.
+Well, pick your poison, manual, error prone Suite or shameful singleton.
 
 ===== Example
 
