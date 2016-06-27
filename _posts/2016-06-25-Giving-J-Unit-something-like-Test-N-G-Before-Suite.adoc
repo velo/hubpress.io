@@ -4,13 +4,13 @@ Giving JUnit something like TestNG.@BeforeSuite
 
 JUnit is the http://blog.takipi.com/we-analyzed-60678-libraries-on-github-here-are-the-top-100/[Undisputed King] of Java unit test Libraries.
 
-TestNG has a way more compreensive lifecycle management using @Before/@After annotations. There is a really good presentation https://prezi.com/zcv2mk3spo93/testng/[about testNG on prezi].  Slide 22 shows how @Before/After works.
+TestNG has a way more compreensive lifecycle management using @Before/@After annotations. If you wanna know more, there is a good presentation https://prezi.com/zcv2mk3spo93/testng/[about testNG on prezi].  Slide 22 shows how @Before/After works.
 
 For me, http://testng.org/doc/documentation-main.html#annotations[`@BeforeSuite`] is pretty much essential writting integrations test.
 
-`@BeforeSuite` description: "the annotated method will be run before all tests in this suite have run."
+`@BeforeSuite`: "the annotated method will be run before all tests in this suite have run."
 
-And guess can't do that!
+And you can't do that with JUnit!
 
 People that do not understand what `@BeforeSuite` does suggests using `@BeforeClass`.  Well, guess what, it ain't the same.
 
@@ -25,9 +25,9 @@ Serious? 2016! For each new test, you need to "remember" to update this.  NO WAY
 
 ===== A better way
 
-So, what is the alternative I can offer? A @ClassRule + https://en.wikipedia.org/wiki/Singleton_pattern[singleton].
+So, what alternative can I offer? http://junit.org/junit4/javadoc/4.12/org/junit/ClassRule.html[@ClassRule] + https://en.wikipedia.org/wiki/Singleton_pattern[singleton].
 
-Yeah, 2016 and I openned the laptop to suggest people to use a singleton.
+Yeah, I openned the laptop to suggest people: use a singleton.
 
 image::http://velo.github.io/images/shame.jpg[]
 
