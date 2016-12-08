@@ -1,0 +1,62 @@
+Dealing with merge chaos
+========================
+
+
+Did you ever got a diff like this:
+
+image::http://velo.github.io/images/merge-chaos/diff.png[]
+
+
+File has 155 lines.
+134 lines got deleted.
+159 lines added.
+
+Effectively, everything changed.
+
+This commonly happpen when different people use different OS (different line ending), when people have different spacing preferences (TAB vs spaces), when people use different IDEs (which come with different default settings).
+
+Now, this get even more interesting when you try to merge 2 branches that got different styles applied.
+
+Using a better http://www.scootersoftware.com/support.php?zz=kb_vcs#gitlinux[mergetool] helps.  But, still not that good:
+
+image::http://velo.github.io/images/merge-chaos/better.png[]
+
+
+Now, if LOCAL, BASE, REMOTE and MERGED files where formatted using my favorite layout, it would look way better.
+
+With that in mind I created a script to format files before loading the mergetool.
+
+
+```
+#!/bin/bash
+
+format  -r $1 $2 $3 $4 -s /profile.xml
+
+bcompare -automerge -ignoreunimportant -reviewconflicts "$1" "$2" "$3" "$4"
+
+touch "$4"
+```
+
+##### Details:
+
+`format` invokes intellij formatter as documented https://confluence.jetbrains.com/display/IDEADEV/Command-Line+Source+Code+Formatter[here], any tool
+
+`-automerge -ignoreunimportant -reviewconflicts` instructs beyond compare to get simple merges done automatically
+
+`touch` just to allow git merge to move forward after beyond compare automerge
+
+
+I named my script as bformat.sh and therefore the git config will look like this
+
+```
+[mergetool "bc3"]
+        cmd = ~/bformatcomp.sh "$LOCAL" "$REMOTE" "$BASE" "$MERGED"
+```
+
+##### Executing bformat
+
+Running git mergetool with `bformatcomp` will look like this:
+
+image::http://velo.github.io/images/merge-chaos/done.png[]
+
+
